@@ -295,10 +295,8 @@ def check_builds_for_files(
     if bazel_dirs:
         for path in (p for p in files
                      if p.suffix in bazel_extensions_to_check):
-            if path not in bazel_builds:
-                # TODO(pwbug/176) Replace this workaround for fuzzers.
-                if 'fuzz' not in str(path):
-                    missing['Bazel'].append(path)
+            if path not in bazel_builds and 'fuzz' not in str(path):
+                missing['Bazel'].append(path)
 
     if gn_dirs or gn_build_files:
         for path in (p for p in files if p.suffix in gn_extensions_to_check):

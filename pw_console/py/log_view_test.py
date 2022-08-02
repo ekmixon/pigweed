@@ -284,9 +284,10 @@ class TestLogView(unittest.TestCase):
         self.assertEqual(log_view.get_current_line(), 3)
         self.assertEqual(log_view.get_total_count(), 4)
         self.assertEqual(
-            list(log.record.message
-                 for log in log_view._get_visible_log_lines()),
-            ['Test log 0', 'Test log 1', 'Test log 2', 'Test log 3'])
+            [log.record.message for log in log_view._get_visible_log_lines()],
+            ['Test log 0', 'Test log 1', 'Test log 2', 'Test log 3'],
+        )
+
         self.assertEqual(
             log_view.get_log_window_indices(available_width=80,
                                             available_height=10), (0, 3))
@@ -302,8 +303,9 @@ class TestLogView(unittest.TestCase):
         self.assertEqual(log_view.get_total_count(), 4)
         # No lines returned
         self.assertEqual(
-            list(log.record.message
-                 for log in log_view._get_visible_log_lines()), [])
+            [log.record.message for log in log_view._get_visible_log_lines()], []
+        )
+
         self.assertEqual(
             log_view.get_log_window_indices(available_width=80,
                                             available_height=10), (4, 3))
@@ -322,9 +324,10 @@ class TestLogView(unittest.TestCase):
         self.assertEqual(log_view.get_total_count(), 8)
         # Only the last 4 logs should appear
         self.assertEqual(
-            list(log.record.message
-                 for log in log_view._get_visible_log_lines()),
-            ['Test log 4', 'Test log 5', 'Test log 6', 'Test log 7'])
+            [log.record.message for log in log_view._get_visible_log_lines()],
+            ['Test log 4', 'Test log 5', 'Test log 6', 'Test log 7'],
+        )
+
         # Window height == 2
         self.assertEqual(
             log_view.get_log_window_indices(available_width=80,
@@ -347,11 +350,19 @@ class TestLogView(unittest.TestCase):
         self.assertEqual(log_view.get_total_count(), 8)
         # All logs should appear
         self.assertEqual(
-            list(log.record.message
-                 for log in log_view._get_visible_log_lines()), [
-                     'Test log 0', 'Test log 1', 'Test log 2', 'Test log 3',
-                     'Test log 4', 'Test log 5', 'Test log 6', 'Test log 7'
-                 ])
+            [log.record.message for log in log_view._get_visible_log_lines()],
+            [
+                'Test log 0',
+                'Test log 1',
+                'Test log 2',
+                'Test log 3',
+                'Test log 4',
+                'Test log 5',
+                'Test log 6',
+                'Test log 7',
+            ],
+        )
+
         self.assertEqual(
             log_view.get_log_window_indices(available_width=80,
                                             available_height=10), (0, 7))
@@ -378,23 +389,10 @@ if _PYTHON_3_8:
 
             return log_view, log_pane
 
-        @parameterized.expand([
-            (
-                'regex filter',
-                'log.*item',
-                [
-                    ('Log some item', dict()),
-                    ('Log another item', dict()),
-                    ('Some exception', dict()),
-                ],
-                [
+        @parameterized.expand([('regex filter', 'log.*item', [('Log some item', {}), ('Log another item', {}), ('Some exception', {})], [
                     'Log some item',
                     'Log another item',
-                ],
-                None,  # field
-                False,  # invert
-            ),
-            (
+                ], None, False), (
                 'regex filter with field',
                 'earth',
                 [
@@ -411,8 +409,7 @@ if _PYTHON_3_8:
                 ],
                 'planet',  # field
                 False,  # invert
-            ),
-            (
+            ), (
                 'regex filter with field inverted',
                 'earth',
                 [
@@ -428,8 +425,7 @@ if _PYTHON_3_8:
                 ],
                 'planet',  # field
                 True,  # invert
-            ),
-        ]) # yapf: disable
+            )])
         async def test_log_filtering(
             self,
             _name,

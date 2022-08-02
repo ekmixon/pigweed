@@ -52,15 +52,10 @@ def preprocess_search_regex(text,
         # Fuzzy match replace spaces with .*
         text_tokens = text.split(' ')
         if len(text_tokens) > 1:
-            text = '(.*?)'.join(
-                ['({})'.format(re.escape(text)) for text in text_tokens])
+            text = '(.*?)'.join([f'({re.escape(text)})' for text in text_tokens])
     elif matcher == SearchMatcher.STRING:
         # Escape any regex specific characters to match the string literal.
         text = re.escape(text)
-    elif matcher == SearchMatcher.REGEX:
-        # Don't modify search text input.
-        pass
-
     return text, regex_flags
 
 
@@ -72,8 +67,7 @@ class RegexValidator(Validator):
         try:
             re.compile(regex_text, regex_flags)
         except re.error as error:
-            raise ValidationError(error.pos,
-                                  "Regex Error: %s" % error) from error
+            raise ValidationError(error.pos, f"Regex Error: {error}") from error
 
 
 @dataclass
@@ -103,9 +97,7 @@ class LogFilter:
 
         match = self.regex.search(field)
 
-        if self.invert:
-            return not match
-        return match
+        return not match if self.invert else match
 
     def highlight_search_matches(self, line_fragments, selected=False):
         """Highlight search matches in the current line_fragment."""
@@ -116,15 +108,9 @@ class LogFilter:
             # Expand all fragments and apply the highlighting style.
             old_style, _text, *_ = fragments[i]
             if selected:
-                fragments[i] = (
-                    old_style + ' class:search.current ',
-                    fragments[i][1],
-                )
+                fragments[i] = f'{old_style} class:search.current ', fragments[i][1]
             else:
-                fragments[i] = (
-                    old_style + ' class:search ',
-                    fragments[i][1],
-                )
+                fragments[i] = f'{old_style} class:search ', fragments[i][1]
 
         if self.invert:
             # Highlight the whole line

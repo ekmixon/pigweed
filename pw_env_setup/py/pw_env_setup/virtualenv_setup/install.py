@@ -58,7 +58,7 @@ class GitRepoNotFound(Exception):
 def _installed_packages(venv_python):
     cmd = (venv_python, '-m', 'pip', 'list', '--disable-pip-version-check')
     output = subprocess.check_output(cmd).splitlines()
-    return set(x.split()[0].lower() for x in output[2:])
+    return {x.split()[0].lower() for x in output[2:]}
 
 
 def _required_packages(requirements):

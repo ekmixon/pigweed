@@ -60,7 +60,8 @@ def update_progress(task_name: str,
         progress_state.tasks[task_name].update(count)
 
     # Check if all tasks are complete
-    if (progress_state.instance is not None
-            and progress_state.all_tasks_complete):
-        if hasattr(progress_state.instance, '__exit__'):
-            progress_state.instance.__exit__()
+    if (
+        progress_state.instance is not None
+        and progress_state.all_tasks_complete
+    ) and hasattr(progress_state.instance, '__exit__'):
+        progress_state.instance.__exit__()

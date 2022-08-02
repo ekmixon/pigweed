@@ -41,7 +41,7 @@ class Spinner(object):  # pylint: disable=useless-object-inheritance
         i = 0
         chars = '|/-\\'
         while not self._done:
-            sys.stdout.write('[{}]'.format(chars[i]))
+            sys.stdout.write(f'[{chars[i]}]')
             sys.stdout.flush()
             time.sleep(0.1)
             sys.stdout.write('\b\b\b')

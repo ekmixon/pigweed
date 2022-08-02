@@ -132,8 +132,7 @@ class ProtoMethod(abc.ABC):
         return ', '.join([f'{type} {name}' for type, name in self.params()])
 
     def field_cast(self) -> str:
-        return 'static_cast<uint32_t>(Fields::{})'.format(
-            self._field.enum_name())
+        return f'static_cast<uint32_t>(Fields::{self._field.enum_name()})'
 
     def _relative_type_namespace(self, from_root: bool = False) -> str:
         """Returns relative namespace between method's scope and field type."""
@@ -155,18 +154,17 @@ class ProtoMethod(abc.ABC):
 class SubMessageMethod(ProtoMethod):
     """Method which returns a sub-message encoder."""
     def name(self) -> str:
-        return 'Get{}Encoder'.format(self._field.name())
+        return f'Get{self._field.name()}Encoder'
 
     def return_type(self, from_root: bool = False) -> str:
-        return '{}::StreamEncoder'.format(
-            self._relative_type_namespace(from_root))
+        return f'{self._relative_type_namespace(from_root)}::StreamEncoder'
 
     def params(self) -> List[Tuple[str, str]]:
         return []
 
     def body(self) -> List[str]:
-        line = 'return {}::StreamEncoder(GetNestedEncoder({}));'.format(
-            self._relative_type_namespace(), self.field_cast())
+        line = f'return {self._relative_type_namespace()}::StreamEncoder(GetNestedEncoder({self.field_cast()}));'
+
         return [line]
 
     # Submessage methods are not defined within the class itself because the
@@ -186,15 +184,14 @@ class WriteMethod(ProtoMethod):
 
     """
     def name(self) -> str:
-        return 'Write{}'.format(self._field.name())
+        return f'Write{self._field.name()}'
 
     def return_type(self, from_root: bool = False) -> str:
         return '::pw::Status'
 
     def body(self) -> List[str]:
         params = ', '.join([pair[1] for pair in self.params()])
-        line = 'return {}({}, {});'.format(self._encoder_fn(),
-                                           self.field_cast(), params)
+        line = f'return {self._encoder_fn()}({self.field_cast()}, {params});'
         return [line]
 
     def params(self) -> List[Tuple[str, str]]:
@@ -490,8 +487,8 @@ class EnumMethod(WriteMethod):
         return [(self._relative_type_namespace(), 'value')]
 
     def body(self) -> List[str]:
-        line = 'return WriteUint32(' \
-            '{}, static_cast<uint32_t>(value));'.format(self.field_cast())
+        line = f'return WriteUint32({self.field_cast()}, static_cast<uint32_t>(value));'
+
         return [line]
 
     def in_class_definition(self) -> bool:

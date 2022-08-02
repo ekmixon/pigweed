@@ -40,10 +40,10 @@ def compile_protos(
     directory added as an include path.
     """
     proto_paths: List[Path] = [Path(f).resolve() for f in proto_files]
-    include_paths: Set[Path] = set(Path(d).resolve() for d in includes)
+    include_paths: Set[Path] = {Path(d).resolve() for d in includes}
 
     for path in proto_paths:
-        if not any(include in path.parents for include in include_paths):
+        if all(include not in path.parents for include in include_paths):
             include_paths.add(path.parent)
 
     cmd: Tuple[PathOrStr, ...] = (
@@ -198,15 +198,15 @@ class _NestedPackage(Generic[T]):
     def __repr__(self) -> str:
         msg = [f'ProtoPackage({self._package!r}']
 
-        public_members = [
-            i for i in vars(self)
+        if public_members := [
+            i
+            for i in vars(self)
             if i not in self._packages and not i.startswith('_')
-        ]
-        if public_members:
-            msg.append(f'members={str(public_members)}')
+        ]:
+            msg.append(f'members={public_members}')
 
         if self._packages:
-            msg.append(f'subpackages={str(list(self._packages))}')
+            msg.append(f'subpackages={list(self._packages)}')
 
         return ', '.join(msg) + ')'
 
@@ -357,10 +357,7 @@ def _field_repr(field, value) -> str:
     if field.type == field.TYPE_MESSAGE:
         return proto_repr(value)
 
-    if field.type == field.TYPE_BYTES:
-        return bytes_repr(value)
-
-    return repr(value)
+    return bytes_repr(value) if field.type == field.TYPE_BYTES else repr(value)
 
 
 def _proto_repr(message) -> Iterator[str]:

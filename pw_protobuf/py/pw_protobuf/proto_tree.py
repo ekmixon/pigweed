@@ -130,8 +130,10 @@ class ProtoNode(abc.ABC):
           ValueError: This node does not allow nesting the given type of child.
         """
         if not self._supports_child(child):
-            raise ValueError('Invalid child %s for node of type %s' %
-                             (child.type(), self.type()))
+            raise ValueError(
+                f'Invalid child {child.type()} for node of type {self.type()}'
+            )
+
 
         # pylint: disable=protected-access
         if child._parent is not None:
@@ -162,8 +164,7 @@ class ProtoNode(abc.ABC):
         """Iterates depth-first through all nodes in this node's subtree."""
         yield self
         for child_iterator in self._children.values():
-            for child in child_iterator:
-                yield child
+            yield from child_iterator
 
     def _attr_hierarchy(self, attr_accessor: Callable[['ProtoNode'], T],
                         root: Optional['ProtoNode']) -> Iterator[T]:
@@ -234,8 +235,7 @@ class ProtoMessage(ProtoNode):
         self._fields.append(field)
 
     def _supports_child(self, child: ProtoNode) -> bool:
-        return (child.type() == self.Type.ENUM
-                or child.type() == self.Type.MESSAGE)
+        return child.type() in [self.Type.ENUM, self.Type.MESSAGE]
 
 
 class ProtoService(ProtoNode):
@@ -331,7 +331,7 @@ class ProtoServiceMethod:
 
         def cc_enum(self) -> str:
             """Returns the pw_rpc MethodType C++ enum for this method type."""
-            return '::pw::rpc::MethodType::' + self.value
+            return f'::pw::rpc::MethodType::{self.value}'
 
     def __init__(self, service: ProtoService, name: str, method_type: Type,
                  request_type: ProtoNode, response_type: ProtoNode):

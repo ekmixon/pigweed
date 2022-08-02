@@ -37,9 +37,14 @@ def read_build_id_from_section(elf_file: BinaryIO) -> Optional[bytes]:
     if build_id_section is None:
         return None
 
-    section_notes = list(n for n in notes.iter_notes(
-        parsed_elf_file, build_id_section['sh_offset'],
-        build_id_section['sh_size']))
+    section_notes = list(
+        notes.iter_notes(
+            parsed_elf_file,
+            build_id_section['sh_offset'],
+            build_id_section['sh_size'],
+        )
+    )
+
 
     if len(section_notes) != 1:
         raise GnuBuildIdError('GNU build ID section contains multiple notes')

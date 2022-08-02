@@ -270,8 +270,7 @@ class HelpWindow(ConditionalContainer):
                 self.max_description_width = len(description)
 
             # Get the existing list of keys for this function or make a new one.
-            key_list = self.help_text_sections[section_name].get(
-                description, list())
+            key_list = self.help_text_sections[section_name].get(description, [])
 
             # Save the name of the key e.g. F1, q, ControlQ, ControlUp
             key_name = '-'.join(

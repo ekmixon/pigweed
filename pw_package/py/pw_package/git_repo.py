@@ -70,7 +70,7 @@ class GitRepo(pw_package.package_manager.Package):
             )
             if not host.endswith('.googlesource.com'):
                 host += '.googlesource.com'
-            remote = 'https://{}{}'.format(host, url.path)
+            remote = f'https://{host}{url.path}'
 
         commit = git_stdout('rev-parse', 'HEAD', repo=path)
         if self._commit and self._commit != commit:
@@ -82,9 +82,8 @@ class GitRepo(pw_package.package_manager.Package):
                 return False
 
         # If it is a sparse checkout, sparse list shall match.
-        if self._sparse_list:
-            if not self.check_sparse_list(path):
-                return False
+        if self._sparse_list and not self.check_sparse_list(path):
+            return False
 
         status = git_stdout('status', '--porcelain=v1', repo=path)
         return remote == self._url and not status
@@ -127,7 +126,7 @@ class GitRepo(pw_package.package_manager.Package):
                 sparse.write(source + '\n')
 
         # Either pull from a commit or a tag.
-        target = self._commit if self._commit else self._tag
+        target = self._commit or self._tag
         git('pull', '--depth=1', 'origin', target, repo=path)
 
     def check_sparse_list(self, path: pathlib.Path) -> bool:

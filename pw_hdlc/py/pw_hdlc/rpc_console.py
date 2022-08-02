@@ -233,10 +233,7 @@ def console(device: str,
     _LOG.debug('Found %d .proto files found with %s', len(protos),
                ', '.join(proto_globs))
 
-    serial_impl = serial.Serial
-    if serial_debug:
-        serial_impl = SerialWithLogging
-
+    serial_impl = SerialWithLogging if serial_debug else serial.Serial
     if socket_addr is None:
         serial_device = serial_impl(device, baudrate, timeout=1)
         read = lambda: serial_device.read(8192)
@@ -267,10 +264,7 @@ def console(device: str,
 def detokenize_and_write_to_output(data: bytes,
                                    unused_output: BinaryIO = sys.stdout.buffer,
                                    detokenizer=None):
-    log_line = data
-    if detokenizer:
-        log_line = detokenize_base64(detokenizer, data)
-
+    log_line = detokenize_base64(detokenizer, data) if detokenizer else data
     for line in log_line.decode(errors="surrogateescape").splitlines():
         _DEVICE_LOG.info(line)
 

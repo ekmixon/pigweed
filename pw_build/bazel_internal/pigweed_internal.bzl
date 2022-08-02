@@ -101,9 +101,7 @@ def default_cc_and_c_kwargs(kwargs):
     cc["srcs"] = [src for src in kwargs["srcs"] if not src.endswith(".c")]
     cc["copts"] = cc["copts"] + CPP17_COPTS
 
-    c_srcs = [src for src in kwargs["srcs"] if src.endswith(".c")]
-
-    if c_srcs:
+    if c_srcs := [src for src in kwargs["srcs"] if src.endswith(".c")]:
         c = dict(kwargs.items())
         c["name"] += "_c"
         c["srcs"] = c_srcs + [src for src in kwargs["srcs"] if src.endswith(".h")]
@@ -137,8 +135,5 @@ def has_pw_assert_dep(deps):
         True if the list contains a pw_assert dependency.
     """
     pw_assert_targets = ["//pw_assert", "//pw_assert:pw_assert"]
-    pw_assert_targets.append(["@pigweed" + t for t in pw_assert_targets])
-    for dep in deps:
-        if dep in pw_assert_targets:
-            return True
-    return False
+    pw_assert_targets.append([f"@pigweed{t}" for t in pw_assert_targets])
+    return any(dep in pw_assert_targets for dep in deps)

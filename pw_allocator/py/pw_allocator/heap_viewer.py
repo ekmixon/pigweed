@@ -134,11 +134,7 @@ def visualize(dump_file=None,
     except TypeError:
         _exit_due_to_bad_heap_info()
 
-    if poison_enabled:
-        poison_offset = pointer_size
-    else:
-        poison_offset = 0
-
+    poison_offset = pointer_size if poison_enabled else 0
     try:
         allocation_dump = open(dump_file, 'r')
     except (FileNotFoundError, TypeError):

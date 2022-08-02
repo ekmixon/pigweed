@@ -277,8 +277,6 @@ class PwPtPythonRepl(ptpython.repl.PythonRepl):  # pylint: disable=too-many-inst
     def has_focus_and_input_empty_condition(self) -> Condition:
         @Condition
         def test() -> bool:
-            if has_focus(self)() and len(self.default_buffer.text) == 0:
-                return True
-            return False
+            return bool(has_focus(self)() and len(self.default_buffer.text) == 0)
 
         return test

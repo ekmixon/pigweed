@@ -533,11 +533,14 @@ _EXCLUDE_FROM_COPYRIGHT_NOTICE: Sequence[str] = (
 
 def match_block_comment_start(line: str) -> Optional[str]:
     """Matches the start of a block comment and returns the end."""
-    for block_comment in COPYRIGHT_BLOCK_COMMENTS:
-        if re.match(block_comment[0], line):
-            # Return the end of the block comment
-            return block_comment[1]
-    return None
+    return next(
+        (
+            block_comment[1]
+            for block_comment in COPYRIGHT_BLOCK_COMMENTS
+            if re.match(block_comment[0], line)
+        ),
+        None,
+    )
 
 
 def copyright_read_first_line(
@@ -550,20 +553,22 @@ def copyright_read_first_line(
     the copyright, and is used for error reporting.
     """
     line = file.readline()
-    first_line_matcher = re.compile(COPYRIGHT_COMMENTS + ' ' +
-                                    COPYRIGHT_FIRST_LINE)
+    first_line_matcher = re.compile(
+        (f'{COPYRIGHT_COMMENTS} ' + COPYRIGHT_FIRST_LINE)
+    )
+
     while line:
-        end_block_comment = match_block_comment_start(line)
-        if end_block_comment:
+        if end_block_comment := match_block_comment_start(line):
             next_line = file.readline()
             copyright_line = re.match(COPYRIGHT_FIRST_LINE, next_line)
-            if not copyright_line:
-                return (None, None, line)
-            return (None, end_block_comment, line)
+            return (
+                (None, end_block_comment, line)
+                if copyright_line
+                else (None, None, line)
+            )
 
-        first_line = first_line_matcher.match(line)
-        if first_line:
-            return (first_line.group(1), None, line)
+        if first_line := first_line_matcher.match(line):
+            return first_line[1], None, line
 
         if (line.strip()
                 and not line.startswith(COPYRIGHT_FIRST_LINE_EXCEPTIONS)):
@@ -609,7 +614,7 @@ def copyright_notice(ctx: PresubmitContext):
                 if end_block_comment:
                     expected_line = expected + '\n'
                 elif comment:
-                    expected_line = (comment + ' ' + expected).rstrip() + '\n'
+                    expected_line = f'{comment} {expected}'.rstrip() + '\n'
 
                 if expected_line != actual:
                     _LOG.warning('  bad line: %r', actual)
@@ -631,24 +636,24 @@ _GN_SOURCES_IN_BUILD = ('setup.cfg', '.toml', '.rst', '.py',
 @filter_paths(endswith=(*_GN_SOURCES_IN_BUILD, 'BUILD', '.bzl', '.gn', '.gni'))
 def source_is_in_build_files(ctx: PresubmitContext):
     """Checks that source files are in the GN and Bazel builds."""
-    missing = build.check_builds_for_files(
+    if missing := build.check_builds_for_files(
         _BAZEL_SOURCES_IN_BUILD,
         _GN_SOURCES_IN_BUILD,
         ctx.paths,
         bazel_dirs=[ctx.root],
-        gn_build_files=git_repo.list_files(pathspecs=['BUILD.gn', '*BUILD.gn'],
-                                           repo_path=ctx.root))
-
-    if missing:
+        gn_build_files=git_repo.list_files(
+            pathspecs=['BUILD.gn', '*BUILD.gn'], repo_path=ctx.root
+        ),
+    ):
         _LOG.warning(
             'All source files must appear in BUILD and BUILD.gn files')
         raise PresubmitFailure
 
     _run_cmake(ctx)
-    cmake_missing = build.check_compile_commands_for_files(
+    if cmake_missing := build.check_compile_commands_for_files(
         ctx.output_dir / 'compile_commands.json',
-        (f for f in ctx.paths if f.suffix in ('.c', '.cc')))
-    if cmake_missing:
+        (f for f in ctx.paths if f.suffix in ('.c', '.cc')),
+    ):
         _LOG.warning('The CMake build is missing %d files', len(cmake_missing))
         _LOG.warning('Files missing from CMake:\n%s',
                      '\n'.join(str(f) for f in cmake_missing))

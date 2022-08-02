@@ -124,11 +124,11 @@ class ReplPaneBottomToolbarBar(ConditionalContainer):
     def get_right_text_tokens(repl_pane):
         """Return right toolbar text."""
         fragments = []
-        separator_text = [('', ' ')]
         if has_focus(repl_pane)():
             fragments.extend(
                 pw_console.widgets.checkbox.to_keybind_indicator(
                     'F2', 'Settings'))
+            separator_text = [('', ' ')]
             fragments.extend(separator_text)
             fragments.extend(
                 pw_console.widgets.checkbox.to_keybind_indicator(
@@ -138,20 +138,22 @@ class ReplPaneBottomToolbarBar(ConditionalContainer):
 
             focus = functools.partial(pw_console.mouse.focus_handler,
                                       repl_pane)
-            fragments.append(
-                (button_style + ' class:toolbar-button-decoration', ' ',
-                 focus))
-            fragments.append((
-                # Style
-                button_style + ' class:keyhelp',
-                # Text
-                'click to focus',
-                # Mouse handler
-                focus,
-            ))
-            fragments.append(
-                (button_style + ' class:toolbar-button-decoration', ' ',
-                 focus))
+            fragments.extend(
+                (
+                    (
+                        f'{button_style} class:toolbar-button-decoration',
+                        ' ',
+                        focus,
+                    ),
+                    (f'{button_style} class:keyhelp', 'click to focus', focus),
+                    (
+                        f'{button_style} class:toolbar-button-decoration',
+                        ' ',
+                        focus,
+                    ),
+                )
+            )
+
         return fragments
 
     def __init__(self, repl_pane):
@@ -272,8 +274,8 @@ class ReplPane:
         startup_message: Optional[str] = None,
     ) -> None:
         # Default width and height to 50% of the screen
-        self.height = height if height else Dimension(weight=50)
-        self.width = width if width else Dimension(weight=50)
+        self.height = height or Dimension(weight=50)
+        self.width = width or Dimension(weight=50)
         self.show_pane = True
 
         self.current_pane_width = 0
@@ -289,7 +291,7 @@ class ReplPane:
         self.pw_ptpython_repl = python_repl
         self.pw_ptpython_repl.set_repl_pane(self)
 
-        self.startup_message = startup_message if startup_message else ''
+        self.startup_message = startup_message or ''
 
         self.output_field = TextArea(
             text=self.startup_message,
@@ -368,8 +370,7 @@ class ReplPane:
             filter=Condition(lambda: self.show_pane))
 
     def get_progress_bar_task_container(self):
-        bar_container = self.progress_state.get_container()
-        if bar_container:
+        if bar_container := self.progress_state.get_container():
             return bar_container
         return Window()
 
@@ -449,15 +450,16 @@ class ReplPane:
                 pw_console.widgets.checkbox.to_keybind_indicator(
                     'Shift+Arrows / Mouse Drag', 'Select Text'))
         else:
-            toolbar_fragments.append((
-                # Style
-                button_style + ' class:keyhelp',
-                # Text
-                ' click to focus ',
-                # Mouse handler
-                functools.partial(pw_console.mouse.focus_handler,
-                                  self.output_field),
-            ))
+            toolbar_fragments.append(
+                (
+                    f'{button_style} class:keyhelp',
+                    ' click to focus ',
+                    functools.partial(
+                        pw_console.mouse.focus_handler, self.output_field
+                    ),
+                )
+            )
+
         toolbar_fragments.extend(separator)
 
         return toolbar_fragments
@@ -466,7 +468,7 @@ class ReplPane:
         toolbar_control = FormattedTextControl(
             self._get_output_toolbar_fragments)
 
-        container = VSplit(
+        return VSplit(
             [
                 Window(
                     content=toolbar_control,
@@ -477,7 +479,6 @@ class ReplPane:
             ],
             style=functools.partial(pw_console.style.get_toolbar_style, self),
         )
-        return container
 
     def pane_title(self):  # pylint: disable=no-self-use
         return 'Python Repl'
@@ -554,8 +555,7 @@ class ReplPane:
         self.pw_ptpython_repl.on_reset()
 
     def interrupt_last_code_execution(self):
-        code = self._get_currently_running_code()
-        if code:
+        if code := self._get_currently_running_code():
             code.future.cancel()
             code.output = 'Canceled'
             self.progress_state.cancel_all_tasks()
@@ -563,16 +563,14 @@ class ReplPane:
         self.update_output_buffer('repl_pane.interrupt_last_code_execution')
 
     def _get_currently_running_code(self):
-        for code in self.executed_code:
-            if not code.future.done():
-                return code
-        return None
+        return next(
+            (code for code in self.executed_code if not code.future.done()), None
+        )
 
     def _get_executed_code(self, future):
-        for code in self.executed_code:
-            if code.future == future:
-                return code
-        return None
+        return next(
+            (code for code in self.executed_code if code.future == future), None
+        )
 
     def _log_executed_code(self, code, prefix=''):
         """Log repl command input text along with a prefix string."""
@@ -629,8 +627,7 @@ class ReplPane:
         self.update_output_buffer('repl_pane.append_result_to_executed_code')
 
     def get_output_buffer_text(self, code_items=None, show_index=True):
-        content_width = (self.current_pane_width
-                         if self.current_pane_width else 80)
+        content_width = self.current_pane_width or 80
         pprint_respecting_width = pprint.PrettyPrinter(
             indent=2, width=content_width).pformat
 
@@ -653,9 +650,9 @@ class ReplPane:
     def input_or_output_has_focus(self) -> Condition:
         @Condition
         def test() -> bool:
-            if has_focus(self.output_field)() or has_focus(
-                    self.pw_ptpython_repl)():
-                return True
-            return False
+            return bool(
+                has_focus(self.output_field)()
+                or has_focus(self.pw_ptpython_repl)()
+            )
 
         return test

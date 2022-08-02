@@ -135,9 +135,7 @@ def main() -> int:
         cmd = args.pop('cmd')
         if cmd == 'diff':
             return diff(**args)
-        if cmd == 'list':
-            return ls(**args)
-        return -1
+        return ls(**args) if cmd == 'list' else -1
     except subprocess.CalledProcessError as err:
         print(file=sys.stderr)
         print(err.output, file=sys.stderr)

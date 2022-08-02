@@ -170,14 +170,15 @@ class ConsolePrefs:
 
     @property
     def window_column_modes(self) -> list:
-        return list(column_type for column_type in self.windows.keys())
+        return list(self.windows.keys())
 
     @property
     def unique_window_titles(self) -> set:
         titles = []
         for column in self.windows.values():
-            for window_key_title, window_dict in column.items():
-                # Use 'duplicate_of: Title' if it exists, otherwise use the key.
-                titles.append(window_dict.get('duplicate_of',
-                                              window_key_title))
+            titles.extend(
+                window_dict.get('duplicate_of', window_key_title)
+                for window_key_title, window_dict in column.items()
+            )
+
         return set(titles)

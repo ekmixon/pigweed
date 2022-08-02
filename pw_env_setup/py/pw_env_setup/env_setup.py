@@ -110,9 +110,8 @@ def _which(executable,
             for ext in exts:
                 if executable + ext in entries:
                     return os.path.join(path, executable + ext)
-        else:
-            if executable in entries:
-                return os.path.join(path, executable)
+        elif executable in entries:
+            return os.path.join(path, executable)
 
     return None
 
@@ -138,9 +137,9 @@ class _Result:
         if duration > 60:
             minutes = int(duration // 60)
             duration %= 60
-            duration_parts.append('{}m'.format(minutes))
+            duration_parts.append(f'{minutes}m')
         duration_parts.append('{:.1f}s'.format(duration))
-        return '{} ({})'.format(self._status, ''.join(duration_parts))
+        return f"{self._status} ({''.join(duration_parts)})"
 
     def messages(self):
         return self._messages
@@ -238,8 +237,8 @@ class EnvSetup(object):
             if pat:
                 matches = glob.glob(pat)
                 if not matches:
-                    warning = 'pattern "{}" matched 0 files'.format(pat)
-                    warnings.append('warning: {}'.format(warning))
+                    warning = f'pattern "{pat}" matched 0 files'
+                    warnings.append(f'warning: {warning}')
                     if self._strict:
                         raise ConfigError(warning)
 
@@ -262,9 +261,9 @@ class EnvSetup(object):
 
         if self._optional_submodules and self._required_submodules:
             raise ValueError(
-                '{} contains both "optional_submodules" and '
-                '"required_submodules", but these options are mutually '
-                'exclusive'.format(self._config_file_name))
+                f'{self._config_file_name} contains both "optional_submodules" and "required_submodules", but these options are mutually exclusive'
+            )
+
 
         self._cipd_package_file.extend(
             os.path.join(self._project_root, x)
@@ -279,7 +278,9 @@ class EnvSetup(object):
 
         for target in virtualenv.pop('gn_targets', ()):
             self._virtualenv_gn_targets.append(
-                virtualenv_setup.GnTarget('{}#{}'.format(root, target)))
+                virtualenv_setup.GnTarget(f'{root}#{target}')
+            )
+
 
         self._virtualenv_gn_args = virtualenv.pop('gn_args', ())
 
@@ -288,12 +289,14 @@ class EnvSetup(object):
 
         if virtualenv:
             raise ConfigFileError(
-                'unrecognized option in {}: "virtualenv.{}"'.format(
-                    self._config_file_name, next(iter(virtualenv))))
+                f'unrecognized option in {self._config_file_name}: "virtualenv.{next(iter(virtualenv))}"'
+            )
+
 
         if config:
-            raise ConfigFileError('unrecognized option in {}: "{}"'.format(
-                self._config_file_name, next(iter(config))))
+            raise ConfigFileError(
+                f'unrecognized option in {self._config_file_name}: "{next(iter(config))}"'
+            )
 
     def _check_submodules(self):
         unitialized = set()
@@ -325,8 +328,7 @@ class EnvSetup(object):
             print('', file=sys.stderr)
 
             for miss in missing:
-                print('    git submodule update --init {}'.format(miss),
-                      file=sys.stderr)
+                print(f'    git submodule update --init {miss}', file=sys.stderr)
             print('', file=sys.stderr)
 
             if self._required_submodules:
@@ -342,7 +344,7 @@ class EnvSetup(object):
                     file=sys.stderr)
 
             print('list in the environment config JSON file:', file=sys.stderr)
-            print('    {}'.format(self._config_file_name), file=sys.stderr)
+            print(f'    {self._config_file_name}', file=sys.stderr)
             print('', file=sys.stderr)
 
             raise MissingSubmodulesError(', '.join(sorted(missing)))
@@ -418,7 +420,7 @@ Then use `set +x` to go back to normal.
 
             self._env.echo(result.status_str())
             for message in result.messages():
-                sys.stderr.write('{}\n'.format(message))
+                sys.stderr.write(f'{message}\n')
                 self._env.echo(message)
 
             if not result.ok():
@@ -443,8 +445,9 @@ Then use `set +x` to go back to normal.
             self._env.write(outs)
 
         deactivate = os.path.join(
-            self._install_dir,
-            'deactivate{}'.format(os.path.splitext(self._shell_file)[1]))
+            self._install_dir, f'deactivate{os.path.splitext(self._shell_file)[1]}'
+        )
+
         with open(deactivate, 'w') as outs:
             self._env.write_deactivate(outs)
 
@@ -494,15 +497,18 @@ Then use `set +x` to go back to normal.
         if not package_files:
             return result(_Result.Status.SKIPPED)
 
-        if not cipd_update.update(cipd=cipd_client,
-                                  root_install_dir=install_dir,
-                                  package_files=package_files,
-                                  cache_dir=self._cipd_cache_dir,
-                                  env_vars=self._env,
-                                  spin=spin):
-            return result(_Result.Status.FAILED)
-
-        return result(_Result.Status.DONE)
+        return (
+            result(_Result.Status.DONE)
+            if cipd_update.update(
+                cipd=cipd_client,
+                root_install_dir=install_dir,
+                package_files=package_files,
+                cache_dir=self._cipd_cache_dir,
+                env_vars=self._env,
+                spin=spin,
+            )
+            else result(_Result.Status.FAILED)
+        )
 
     def virtualenv(self, unused_spin):
         """Setup virtualenv."""
@@ -527,24 +533,26 @@ Then use `set +x` to go back to normal.
                 shutil.copyfile(new_python3, python3_copy)
             new_python3 = python3_copy
 
-        if not requirements and not self._virtualenv_gn_targets:
+        if requirements or self._virtualenv_gn_targets:
+            return (
+                result(_Result.Status.DONE)
+                if virtualenv_setup.install(
+                    project_root=self._project_root,
+                    venv_path=self._virtualenv_root,
+                    requirements=requirements,
+                    gn_args=self._virtualenv_gn_args,
+                    gn_targets=self._virtualenv_gn_targets,
+                    gn_out_dir=self._virtualenv_gn_out_dir,
+                    python=new_python3,
+                    env=self._env,
+                    system_packages=self._virtualenv_system_packages,
+                    use_pinned_pip_packages=self._use_pinned_pip_packages,
+                )
+                else result(_Result.Status.FAILED)
+            )
+
+        else:
             return result(_Result.Status.SKIPPED)
-
-        if not virtualenv_setup.install(
-                project_root=self._project_root,
-                venv_path=self._virtualenv_root,
-                requirements=requirements,
-                gn_args=self._virtualenv_gn_args,
-                gn_targets=self._virtualenv_gn_targets,
-                gn_out_dir=self._virtualenv_gn_out_dir,
-                python=new_python3,
-                env=self._env,
-                system_packages=self._virtualenv_system_packages,
-                use_pinned_pip_packages=self._use_pinned_pip_packages,
-        ):
-            return result(_Result.Status.FAILED)
-
-        return result(_Result.Status.DONE)
 
     def host_tools(self, unused_spin):
         # The host tools are grabbed from CIPD, at least initially. If the
@@ -661,9 +669,7 @@ def parse(argv=None):
         action='store_false',
     )
 
-    args = parser.parse_args(argv)
-
-    return args
+    return parser.parse_args(argv)
 
 
 def main():

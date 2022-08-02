@@ -82,8 +82,7 @@ def check_module(module) -> bool:
                     issue.line_contents,
                 ) if x
             ]
-            editor_error_line = ':'.join(components)
-            if editor_error_line:
+            if editor_error_line := ':'.join(components):
                 _LOG.log(log_level, '%s', check.name)
                 print(editor_error_line, issue.message)
             else:

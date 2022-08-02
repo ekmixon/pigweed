@@ -33,9 +33,12 @@ class CortexMExceptionAnalyzer:
 
         temp_field_list = []
         if self._cpu_state.HasField('cfsr'):
-            for bit_field in cortex_m_constants.PW_CORTEX_M_CFSR_BIT_FIELDS:
-                if self._cpu_state.cfsr & bit_field.bit_mask:
-                    temp_field_list.append(bit_field)
+            temp_field_list.extend(
+                bit_field
+                for bit_field in cortex_m_constants.PW_CORTEX_M_CFSR_BIT_FIELDS
+                if self._cpu_state.cfsr & bit_field.bit_mask
+            )
+
         self._active_cfsr_fields = tuple(temp_field_list)
         return self._active_cfsr_fields
 
@@ -55,12 +58,17 @@ class CortexMExceptionAnalyzer:
 
     def is_nested_fault(self) -> bool:
         """Returns true if the current CPU state indicates a nested fault."""
-        if not self.is_fault_active():
-            return False
-        if (self._cpu_state.HasField('hfsr') and self._cpu_state.hfsr
-                & cortex_m_constants.PW_CORTEX_M_HFSR_FORCED_MASK):
-            return True
-        return False
+        return (
+            bool(
+                (
+                    self._cpu_state.HasField('hfsr')
+                    and self._cpu_state.hfsr
+                    & cortex_m_constants.PW_CORTEX_M_HFSR_FORCED_MASK
+                )
+            )
+            if self.is_fault_active()
+            else False
+        )
 
     def exception_cause(self, show_active_cfsr_fields=True) -> str:
         """Analyzes CPU state to tries and classify the exception.
@@ -76,13 +84,13 @@ class CortexMExceptionAnalyzer:
               memory management fault at 0x00000000 [DACCVIOL] [MMARVALID]
         """
         cause = ''
-        # The CFSR can accumulate multiple exceptions.
-        split_major_cause = lambda cause: cause if not cause else cause + ', '
-
         if self._cpu_state.HasField('cfsr') and self.is_fault_active():
             if (self._cpu_state.cfsr
                     & cortex_m_constants.PW_CORTEX_M_CFSR_USAGE_FAULT_MASK):
                 cause += 'usage fault'
+
+                # The CFSR can accumulate multiple exceptions.
+            split_major_cause = lambda cause: f'{cause}, ' if cause else cause
 
             if (self._cpu_state.cfsr
                     & cortex_m_constants.PW_CORTEX_M_CFSR_MEM_FAULT_MASK):
@@ -90,8 +98,12 @@ class CortexMExceptionAnalyzer:
                 cause += 'memory management fault'
                 if (self._cpu_state.cfsr
                         & cortex_m_constants.PW_CORTEX_M_CFSR_MMARVALID_MASK):
-                    addr = '???' if not self._cpu_state.HasField(
-                        'mmfar') else f'0x{self._cpu_state.mmfar:08x}'
+                    addr = (
+                        f'0x{self._cpu_state.mmfar:08x}'
+                        if self._cpu_state.HasField('mmfar')
+                        else '???'
+                    )
+
                     cause += f' at {addr}'
 
             if (self._cpu_state.cfsr
@@ -103,14 +115,18 @@ class CortexMExceptionAnalyzer:
                 cause += 'bus fault'
                 if (self._cpu_state.cfsr
                         & cortex_m_constants.PW_CORTEX_M_CFSR_BFARVALID_MASK):
-                    addr = '???' if not self._cpu_state.HasField(
-                        'bfar') else f'0x{self._cpu_state.bfar:08x}'
+                    addr = (
+                        f'0x{self._cpu_state.bfar:08x}'
+                        if self._cpu_state.HasField('bfar')
+                        else '???'
+                    )
+
                     cause += f' at {addr}'
             if show_active_cfsr_fields:
                 for field in self.active_cfsr_fields():
                     cause += f' [{field.name}]'
 
-        return cause if cause else 'unknown exception'
+        return cause or 'unknown exception'
 
     def dump_registers(self) -> str:
         """Dumps all captured CPU registers as a multi-line string."""

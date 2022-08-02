@@ -107,8 +107,9 @@ def file_summary(paths: Iterable[Path],
 
         if files:
             extensions = files.most_common(max_types)
-            other_extensions = total - sum(count for _, count in extensions)
-            if other_extensions:
+            if other_extensions := total - sum(
+                count for _, count in extensions
+            ):
                 extensions.append(('other', other_extensions))
 
             types = ' (' + ', '.join(f'{c} {e}' for e, c in extensions) + ')'
@@ -143,7 +144,7 @@ def exclude_paths(exclusions: Iterable[Pattern[str]],
 
 def _truncate(value, length: int = 60) -> str:
     value = str(value)
-    return (value[:length - 5] + '[...]') if len(value) > length else value
+    return f'{value[:length - 5]}[...]' if len(value) > length else value
 
 
 def format_command(args: Sequence, kwargs: dict) -> Tuple[str, str]:

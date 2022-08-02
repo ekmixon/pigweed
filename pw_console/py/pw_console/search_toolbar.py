@@ -96,11 +96,7 @@ class SearchToolbar(ConditionalContainer):
         separator_text = [('', '  ', focus)]
 
         # Empty text matching the width of the search bar title.
-        fragments = [
-            ('', '        ', focus),
-        ]
-        fragments.extend(separator_text)
-
+        fragments = [('', '        ', focus), *separator_text]
         fragments.extend(
             pw_console.widgets.checkbox.to_keybind_indicator(
                 'Enter', 'Search', start_search, base_style=button_style))
@@ -147,17 +143,15 @@ class SearchToolbar(ConditionalContainer):
         # style here.
         button_style = 'class:toolbar-button-inactive'
 
-        fragments = [
-            # Title
-            ('class:search-bar-title', ' Search ', focus),
-        ]
-        fragments.extend(separator_text)
-
+        fragments = [('class:search-bar-title', ' Search ', focus), *separator_text]
         selected_column_text = [
-            (button_style + ' class:search-bar-setting',
-             (self._search_field.title() if self._search_field else 'All'),
-             next_field),
+            (
+                f'{button_style} class:search-bar-setting',
+                self._search_field.title() if self._search_field else 'All',
+                next_field,
+            )
         ]
+
         fragments.extend(
             pw_console.widgets.checkbox.to_keybind_indicator(
                 'Ctrl-t',
@@ -179,9 +173,13 @@ class SearchToolbar(ConditionalContainer):
 
         # Matching Method
         current_matcher_text = [
-            (button_style + ' class:search-bar-setting',
-             str(self.log_pane.log_view.search_matcher.name), next_matcher)
+            (
+                f'{button_style} class:search-bar-setting',
+                str(self.log_pane.log_view.search_matcher.name),
+                next_matcher,
+            )
         ]
+
         fragments.extend(
             pw_console.widgets.checkbox.to_keybind_indicator(
                 'Ctrl-n',

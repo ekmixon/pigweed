@@ -39,17 +39,19 @@ def find_files(starting_dir: str,
                patterns: List[str],
                directories_only=False) -> List[str]:
     original_working_dir = os.getcwd()
-    if not (os.path.exists(starting_dir) and os.path.isdir(starting_dir)):
-        raise FileNotFoundError(
-            "Directory '{}' does not exist.".format(starting_dir))
+    if not os.path.exists(starting_dir) or not os.path.isdir(starting_dir):
+        raise FileNotFoundError(f"Directory '{starting_dir}' does not exist.")
 
     os.chdir(starting_dir)
     files = []
     for pattern in patterns:
-        for file_path in glob.glob(pattern, recursive=True):
-            if not directories_only or (directories_only
-                                        and os.path.isdir(file_path)):
-                files.append(file_path)
+        files.extend(
+            file_path
+            for file_path in glob.glob(pattern, recursive=True)
+            if not directories_only
+            or (directories_only and os.path.isdir(file_path))
+        )
+
     os.chdir(original_working_dir)
     return sorted(files)
 
@@ -159,8 +161,10 @@ def extract_archive(archive_file: str,
             directory.
     """
     # Make a temporary directory to extract files into
-    temp_extract_dir = os.path.join(cache_dir,
-                                    "." + os.path.basename(archive_file))
+    temp_extract_dir = os.path.join(
+        cache_dir, f".{os.path.basename(archive_file)}"
+    )
+
     os.makedirs(temp_extract_dir, exist_ok=True)
 
     _LOG.info("Extracting: %s", relative_or_absolute_path(archive_file))

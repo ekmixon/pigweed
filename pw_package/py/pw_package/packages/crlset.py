@@ -48,14 +48,11 @@ class CRLSet(pw_package.package_manager.Package):
             return False
 
         # The executable should have been built and exist.
-        if not os.path.exists(crlset_exec_path(path)):
-            return False
-
-        # A crlset has been downloaded
-        if not os.path.exists(crlset_file_path(path)):
-            return False
-
-        return True
+        return (
+            bool(os.path.exists(crlset_file_path(path)))
+            if os.path.exists(crlset_exec_path(path))
+            else False
+        )
 
     def install(self, path: pathlib.Path) -> None:
         self._crlset_tools.install(crlset_tools_repo_path(path))

@@ -192,10 +192,10 @@ def write_config(
     """Write a the final setup.cfg file with license comment block."""
     # Get the license comment block from the common_config.
     comment_block_text = ''
-    comment_block_match = re.search(r'((^#.*?[\r\n])*)([^#])',
-                                    common_config.read_text(), re.MULTILINE)
-    if comment_block_match:
-        comment_block_text = comment_block_match.group(1)
+    if comment_block_match := re.search(
+        r'((^#.*?[\r\n])*)([^#])', common_config.read_text(), re.MULTILINE
+    ):
+        comment_block_text = comment_block_match[1]
 
     setup_cfg_file = tree_destination_dir.resolve() / 'setup.cfg'
     setup_cfg_text = io.StringIO()

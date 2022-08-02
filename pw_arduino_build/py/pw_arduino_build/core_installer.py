@@ -187,8 +187,8 @@ def install_core(prefix, core_name):
         install_arduino_samd_core(install_prefix, install_dir, cache_dir)
     else:
         raise ArduinoCoreNotSupported(
-            "Invalid core '{}'. Supported cores: {}".format(
-                core_name, ", ".join(supported_cores())))
+            f"""Invalid core '{core_name}'. Supported cores: {", ".join(supported_cores())}"""
+        )
 
 
 def supported_cores():

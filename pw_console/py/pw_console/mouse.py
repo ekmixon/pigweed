@@ -20,8 +20,10 @@ from prompt_toolkit.mouse_events import MouseEvent, MouseEventType
 
 def focus_handler(container, mouse_event: MouseEvent):
     """Focus container on click."""
-    if not has_focus(container)():
-        if mouse_event.event_type == MouseEventType.MOUSE_UP:
-            get_app().layout.focus(container)
-            return None
+    if (
+        not has_focus(container)()
+        and mouse_event.event_type == MouseEventType.MOUSE_UP
+    ):
+        get_app().layout.focus(container)
+        return None
     return NotImplemented

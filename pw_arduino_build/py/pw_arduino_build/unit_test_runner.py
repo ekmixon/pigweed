@@ -246,17 +246,16 @@ def run_device_test(binary, flash_only, port, baud, test_timeout, upload_tool,
             raise DeviceNotFound(error)
         test_runner_args += boards[0].test_runner_args()
         upload_tool = boards[0].arduino_upload_tool_name
-        if port is None:
-            port = boards[0].dev_name
+    if port is None:
+        port = boards[0].dev_name
 
     # TODO(tonymd): Remove this when teensy_ports is working in teensy_detector
     if platform.system() == "Windows":
-        # Delete the incorrect serial port.
-        index_of_port = [
-            i for i, l in enumerate(test_runner_args)
+        if index_of_port := [
+            i
+            for i, l in enumerate(test_runner_args)
             if l.startswith('serial.port=')
-        ]
-        if index_of_port:
+        ]:
             # Delete the '--set-variable' arg
             del test_runner_args[index_of_port[0] - 1]
             # Delete the 'serial.port=*' arg
@@ -321,10 +320,9 @@ def main():
                    required=True),
     ]
 
-    # Use CIPD installed compilers.
-    compiler_path_override = get_option("compiler_path_override",
-                                        json_file_options, args)
-    if compiler_path_override:
+    if compiler_path_override := get_option(
+        "compiler_path_override", json_file_options, args
+    ):
         arduino_builder_args += [
             "--compiler-path-override", compiler_path_override
         ]
@@ -340,9 +338,7 @@ def main():
     build_path = binary.parent.as_posix()
     arduino_builder_args += ["--build-path", build_path]
     build_project_name = binary.name
-    # Remove '.elf' extension.
-    match_result = re.match(r'(.*?)\.elf$', binary.name, re.IGNORECASE)
-    if match_result:
+    if match_result := re.match(r'(.*?)\.elf$', binary.name, re.IGNORECASE):
         build_project_name = match_result[1]
         arduino_builder_args += ["--build-project-name", build_project_name]
 

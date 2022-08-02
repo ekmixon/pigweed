@@ -120,8 +120,7 @@ class FrameDecoder:
           Frames, which may be valid (frame.ok()) or corrupt (!frame.ok())
         """
         for byte in data:
-            frame = self._process_byte(byte)
-            if frame:
+            if frame := self._process_byte(byte):
                 yield frame
 
     def process_valid_frames(self, data: bytes) -> Iterator[Frame]:

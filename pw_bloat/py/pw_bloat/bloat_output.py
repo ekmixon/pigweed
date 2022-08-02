@@ -141,7 +141,7 @@ class TableOutput(Output):
 
             for segment in diff.formatted_segments():
                 subrow: List[str] = []
-                label = diff.label if not subrows else ''
+                label = '' if subrows else diff.label
                 subrow.append(getattr(label, self._justify)(max_label, ' '))
                 subrow.extend([
                     getattr(self._preprocess(val),

@@ -61,7 +61,7 @@ class Error(Exception):
 def _get_module(member: object) -> types.ModuleType:
     """Gets the module or a fake module if the module isn't found."""
     module = inspect.getmodule(member)
-    return module if module else types.ModuleType('<unknown>')
+    return module or types.ModuleType('<unknown>')
 
 
 class Plugin:
@@ -154,8 +154,7 @@ def callable_with_no_args(plugin: Plugin) -> None:
                     f'{plugin.target_name} is a '
                     f'{type(plugin.target).__name__}')
 
-    positional = sum(p.default == p.empty for p in params.values())
-    if positional:
+    if positional := sum(p.default == p.empty for p in params.values()):
         raise Error(f'Plugin functions cannot have any required positional '
                     f'arguments, but {plugin.target_name} has {positional}')
 
@@ -416,9 +415,9 @@ def import_submodules(module: types.ModuleType,
     """
     path = module.__path__  # type: ignore[attr-defined]
     if recursive:
-        modules = pkgutil.walk_packages(path, module.__name__ + '.')
+        modules = pkgutil.walk_packages(path, f'{module.__name__}.')
     else:
-        modules = pkgutil.iter_modules(path, module.__name__ + '.')
+        modules = pkgutil.iter_modules(path, f'{module.__name__}.')
 
     for info in modules:
         importlib.import_module(info.name)

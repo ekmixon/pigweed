@@ -465,25 +465,29 @@ class WindowManager:
         """Build the [Window] menu for the current set of window lists."""
         root_menu_items = []
         for window_list_index, window_list in enumerate(self.window_lists):
-            menu_items = []
-            menu_items.append(
+            menu_items = [
                 MenuItem(
                     'Column {index} View Modes'.format(
-                        index=window_list_index + 1),
+                        index=window_list_index + 1
+                    ),
                     children=[
                         MenuItem(
                             '{check} {display_mode} Windows'.format(
                                 display_mode=display_mode.value,
-                                check=pw_console.widgets.checkbox.
-                                to_checkbox_text(
+                                check=pw_console.widgets.checkbox.to_checkbox_text(
                                     window_list.display_mode == display_mode,
                                     end='',
-                                )),
+                                ),
+                            ),
                             handler=functools.partial(
-                                window_list.set_display_mode, display_mode),
-                        ) for display_mode in DisplayMode
+                                window_list.set_display_mode, display_mode
+                            ),
+                        )
+                        for display_mode in DisplayMode
                     ],
-                ))
+                )
+            ]
+
             menu_items.extend(
                 MenuItem(
                     '{index}: {title} {subtitle}'.format(

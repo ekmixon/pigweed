@@ -81,7 +81,7 @@ class CodeGenerator(abc.ABC):
         """Outputs each arg one per line; adds end to teh last arg."""
         with self.indent(4):
             for arg in args[:-1]:
-                self.line(arg + ',')
+                self.line(f'{arg},')
 
             self.line(args[-1] + end)
 

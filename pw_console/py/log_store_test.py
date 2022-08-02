@@ -46,9 +46,10 @@ class TestLogStore(unittest.TestCase):
 
         # Expected log message content
         self.assertEqual(
-            ['DEBUG:log_store.test:Test log {}'.format(i) for i in range(5)],
+            [f'DEBUG:log_store.test:Test log {i}' for i in range(5)],
             log_context.output,
         )
+
         # LogStore state checks
         viewer.new_logs_arrived.assert_called()
         self.assertEqual(5, log_store.get_total_count())

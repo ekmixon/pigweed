@@ -28,11 +28,11 @@ from pw_console.console_app import ConsoleApp
 def _create_console_app(logger_count=2):
     console_app = ConsoleApp(color_depth=ColorDepth.DEPTH_8_BIT)
 
-    loggers = {}
-    for i in range(logger_count):
-        loggers['Log{}'.format(i)] = [
-            logging.getLogger('test_log{}'.format(i))
-        ]
+    loggers = {
+        f'Log{i}': [logging.getLogger(f'test_log{i}')]
+        for i in range(logger_count)
+    }
+
     for window_title, logger_instances in loggers.items():
         console_app.add_log_handler(window_title, logger_instances)
     return console_app
@@ -59,10 +59,13 @@ def _window_pane_counts(window_manager):
 
 
 def _window_pane_titles(window_manager):
-    return [[
-        pane.pane_title() + ' - ' + pane.pane_subtitle()
-        for pane in window_list.active_panes
-    ] for window_list in window_manager.window_lists]
+    return [
+        [
+            f'{pane.pane_title()} - {pane.pane_subtitle()}'
+            for pane in window_list.active_panes
+        ]
+        for window_list in window_manager.window_lists
+    ]
 
 
 def _target_list_and_pane(window_manager, list_index, pane_index):

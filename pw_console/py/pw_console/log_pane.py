@@ -219,16 +219,18 @@ class LogContentControl(FormattedTextControl):
 
         # Check for pane focus first.
         # If not in focus, change forus to the log pane and do nothing else.
-        if not has_focus(self)():
-            if mouse_event.event_type == MouseEventType.MOUSE_UP:
-                # Focus the search bar if it is open.
-                if self.log_pane.search_bar_active:
-                    get_app().layout.focus(self.log_pane.search_toolbar)
-                # Otherwise focus on the log pane content.
-                else:
-                    get_app().layout.focus(self)
-                # Mouse event handled, return None.
-                return None
+        if (
+            not has_focus(self)()
+            and mouse_event.event_type == MouseEventType.MOUSE_UP
+        ):
+            # Focus the search bar if it is open.
+            if self.log_pane.search_bar_active:
+                get_app().layout.focus(self.log_pane.search_toolbar)
+            # Otherwise focus on the log pane content.
+            else:
+                get_app().layout.focus(self)
+            # Mouse event handled, return None.
+            return None
 
         if mouse_event.event_type == MouseEventType.MOUSE_UP:
             # Scroll to the line clicked.
@@ -294,8 +296,8 @@ class LogPane:
         # TODO(tonymd): Read these settings from a project (or user) config.
         self.wrap_lines = False
         self._table_view = True
-        self.height = height if height else Dimension(weight=50)
-        self.width = width if width else Dimension(weight=50)
+        self.height = height or Dimension(weight=50)
+        self.width = width or Dimension(weight=50)
         self.show_pane = True
         self._pane_title = pane_title
         self._pane_subtitle = None
@@ -411,10 +413,7 @@ class LogPane:
         self.horizontal_scroll_amount += 1
 
     def pane_title(self):
-        title = self._pane_title
-        if not title:
-            title = 'Logs'
-        return title
+        return self._pane_title or 'Logs'
 
     def set_pane_title(self, title: str):
         self._pane_title = title
@@ -434,10 +433,9 @@ class LogPane:
         return title
 
     def append_pane_subtitle(self, text):
-        if not self._pane_subtitle:
-            self._pane_subtitle = text
-        else:
-            self._pane_subtitle = self._pane_subtitle + ', ' + text
+        self._pane_subtitle = (
+            f'{self._pane_subtitle}, {text}' if self._pane_subtitle else text
+        )
 
     def pane_subtitle(self):
         if not self._pane_subtitle:
@@ -445,7 +443,7 @@ class LogPane:
         logger_names = self._pane_subtitle.split(', ')
         additional_text = ''
         if len(logger_names) > 1:
-            additional_text = ' + {} more'.format(len(logger_names))
+            additional_text = f' + {len(logger_names)} more'
 
         return logger_names[0] + additional_text
 

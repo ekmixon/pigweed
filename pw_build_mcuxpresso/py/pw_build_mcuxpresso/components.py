@@ -37,9 +37,9 @@ def _gn_list_path_out(name: str,
                       path_prefix: Optional[str] = None):
     """Outputs list of paths in GN format with common prefix."""
     if path_prefix is not None:
-        str_val = list(f'{path_prefix}/{str(d)}' for d in val)
+        str_val = [f'{path_prefix}/{str(d)}' for d in val]
     else:
-        str_val = list(str(d) for d in val)
+        str_val = [str(d) for d in val]
     _gn_list_str_out(name, str_val)
 
 
@@ -89,7 +89,7 @@ def parse_defines(root: xml.etree.ElementTree.Element,
         list of str NAME=VALUE or NAME for the component.
     """
     xpath = f'./components/component[@id="{component_id}"]/defines/define'
-    return list(_parse_define(define) for define in root.findall(xpath))
+    return [_parse_define(define) for define in root.findall(xpath)]
 
 
 def _parse_define(define: xml.etree.ElementTree.Element) -> str:
@@ -107,10 +107,7 @@ def _parse_define(define: xml.etree.ElementTree.Element) -> str:
     """
     name = define.attrib['name']
     value = define.attrib.get('value', None)
-    if value is None:
-        return name
-
-    return f'{name}={value}'
+    return name if value is None else f'{name}={value}'
 
 
 def parse_include_paths(root: xml.etree.ElementTree.Element,
@@ -160,9 +157,7 @@ def _parse_include_path(include_path: xml.etree.ElementTree.Element,
         Path, prefixed with `base_path`.
     """
     path = pathlib.Path(include_path.attrib['relative_path'])
-    if base_path is None:
-        return path
-    return base_path / path
+    return path if base_path is None else base_path / path
 
 
 def parse_headers(root: xml.etree.ElementTree.Element,
@@ -325,11 +320,7 @@ def _parse_dependency(dependency: xml.etree.ElementTree.Element) -> List[str]:
         for subdependency in dependency:
             dependencies.extend(_parse_dependency(subdependency))
         return dependencies
-    if dependency.tag == 'any_of':
-        # Explicitly ignore.
-        return []
-
-    # Unknown dependency tag type.
+    # Explicitly ignore.
     return []
 
 
@@ -352,10 +343,10 @@ def check_dependencies(root: xml.etree.ElementTree.Element,
         True if dependencies are satisfied, False if not.
     """
     xpath = f'./components/component[@id="{component_id}"]/dependencies/*'
-    for dependency in root.findall(xpath):
-        if not _check_dependency(dependency, include, exclude=exclude):
-            return False
-    return True
+    return all(
+        _check_dependency(dependency, include, exclude=exclude)
+        for dependency in root.findall(xpath)
+    )
 
 
 def _check_dependency(dependency: xml.etree.ElementTree.Element,
@@ -379,10 +370,11 @@ def _check_dependency(dependency: xml.etree.ElementTree.Element,
         return component_id in include or (exclude is not None
                                            and component_id in exclude)
     if dependency.tag == 'all':
-        for subdependency in dependency:
-            if not _check_dependency(subdependency, include, exclude=exclude):
-                return False
-        return True
+        return all(
+            _check_dependency(subdependency, include, exclude=exclude)
+            for subdependency in dependency
+        )
+
     if dependency.tag == 'any_of':
         for subdependency in dependency:
             if _check_dependency(subdependency, include, exclude=exclude):
@@ -417,7 +409,7 @@ def create_project(
     # dependencies.
     project_list = []
     pending_list = include
-    while len(pending_list) > 0:
+    while pending_list:
         component_id = pending_list.pop(0)
         if component_id in project_list:
             continue

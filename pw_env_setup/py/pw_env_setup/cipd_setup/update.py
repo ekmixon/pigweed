@@ -84,7 +84,7 @@ def check_auth(cipd, package_files, spin):
 
         match = re.search(r'Logged in as (\S*)\.', output)
         if match:
-            username = match.group(1)
+            username = match[1]
 
     except subprocess.CalledProcessError:
         logged_in = False
@@ -163,7 +163,7 @@ def _platform():
     else:
         arch = platform.machine()
 
-    return '{}-{}'.format(osname, arch).lower()
+    return f'{osname}-{arch}'.lower()
 
 
 def write_ensure_file(package_file, ensure_file):
@@ -181,8 +181,8 @@ def write_ensure_file(package_file, ensure_file):
             if 'platforms' in pkg and _platform() not in pkg['platforms']:
                 continue
 
-            outs.write('@Subdir {}\n'.format(pkg.get('subdir', '')))
-            outs.write('{} {}\n'.format(pkg['path'], ' '.join(pkg['tags'])))
+            outs.write(f"@Subdir {pkg.get('subdir', '')}\n")
+            outs.write(f"{pkg['path']} {' '.join(pkg['tags'])}\n")
 
 
 def update(
@@ -207,9 +207,7 @@ def update(
         env_vars.set('PW_CIPD_INSTALL_DIR', root_install_dir)
         env_vars.set('CIPD_CACHE_DIR', cache_dir)
 
-    pw_root = None
-    if env_vars:
-        pw_root = env_vars.get('PW_ROOT', None)
+    pw_root = env_vars.get('PW_ROOT', None) if env_vars else None
     if not pw_root:
         pw_root = os.environ['PW_ROOT']
 
@@ -221,7 +219,10 @@ def update(
             ensure_file = os.path.join(
                 root_install_dir,
                 os.path.basename(
-                    os.path.splitext(package_file)[0] + '.ensure'))
+                    f'{os.path.splitext(package_file)[0]}.ensure'
+                ),
+            )
+
             write_ensure_file(package_file, ensure_file)
 
         install_dir = os.path.join(
@@ -233,17 +234,23 @@ def update(
         cmd = [
             cipd,
             'ensure',
-            '-ensure-file', ensure_file,
-            '-root', install_dir,
-            '-log-level', 'debug',
+            '-ensure-file',
+            ensure_file,
+            '-root',
+            install_dir,
+            '-log-level',
+            'debug',
             '-json-output',
-            os.path.join(root_install_dir, '{}-output.json'.format(name)),
-            '-cache-dir', cache_dir,
-            '-max-threads', '0',  # 0 means use CPU count.
-        ]  # yapf: disable
+            os.path.join(root_install_dir, f'{name}-output.json'),
+            '-cache-dir',
+            cache_dir,
+            '-max-threads',
+            '0',
+        ]
+
 
         # TODO(pwbug/135) Use function from common utility module.
-        log = os.path.join(root_install_dir, '{}.log'.format(name))
+        log = os.path.join(root_install_dir, f'{name}.log')
         try:
             with open(log, 'w') as outs:
                 print(*cmd, file=outs)
@@ -262,8 +269,7 @@ def update(
             # installed under 'bin'.
             env_vars.prepend('PATH', install_dir)
             env_vars.prepend('PATH', os.path.join(install_dir, 'bin'))
-            env_vars.set('PW_{}_CIPD_INSTALL_DIR'.format(name.upper()),
-                         install_dir)
+            env_vars.set(f'PW_{name.upper()}_CIPD_INSTALL_DIR', install_dir)
 
             # Windows has its own special toolchain.
             if os.name == 'nt':

@@ -93,9 +93,8 @@ class WindowList:
         return focused_pane
 
     def get_pane_titles(self, omit_subtitles=False, use_menu_title=True):
-        fragments = []
         separator = ('', ' ')
-        fragments.append(separator)
+        fragments = [separator]
         for pane_index, pane in enumerate(self.active_panes):
             title = pane.menu_title() if use_menu_title else pane.pane_title()
             subtitle = pane.pane_subtitle()
@@ -103,19 +102,22 @@ class WindowList:
             if omit_subtitles:
                 text = f' {title} '
 
-            fragments.append((
-                # Style
-                ('class:window-tab-active' if pane_index
-                 == self.focused_pane_index else 'class:window-tab-inactive'),
-                # Text
-                text,
-                # Mouse handler
-                functools.partial(
-                    pw_console.widgets.mouse_handlers.on_click,
-                    functools.partial(self.switch_to_tab, pane_index),
-                ),
-            ))
-            fragments.append(separator)
+            fragments.extend(
+                (
+                    (
+                        'class:window-tab-active'
+                        if pane_index == self.focused_pane_index
+                        else 'class:window-tab-inactive',
+                        text,
+                        functools.partial(
+                            pw_console.widgets.mouse_handlers.on_click,
+                            functools.partial(self.switch_to_tab, pane_index),
+                        ),
+                    ),
+                    separator,
+                )
+            )
+
         return fragments
 
     def switch_to_tab(self, index: int):
@@ -151,10 +153,11 @@ class WindowList:
         """Re-create the window list split depending on the display mode."""
         if self.display_mode == DisplayMode.STACK:
             self.container = HSplit(
-                list(pane for pane in self.active_panes if pane.show_pane),
+                [pane for pane in self.active_panes if pane.show_pane],
                 height=lambda: self.height,
                 width=lambda: self.width,
             )
+
 
         elif self.display_mode == DisplayMode.TABBED:
             self.container = HSplit(
@@ -179,7 +182,7 @@ class WindowList:
                         align=WindowAlign.LEFT,
                         dont_extend_width=False)
 
-        tab_toolbar = VSplit(
+        return VSplit(
             [
                 tab_bar_window,
                 spacer,
@@ -188,7 +191,6 @@ class WindowList:
             height=1,
             align=HorizontalAlign.LEFT,
         )
-        return tab_toolbar
 
     def empty(self) -> bool:
         return len(self.active_panes) == 0
@@ -213,11 +215,10 @@ class WindowList:
         existing_pane_index = self.pane_index(existing_pane)
         if existing_pane_index is not None:
             self.active_panes.insert(new_pane, existing_pane_index + 1)
+        elif add_at_beginning:
+            self.active_panes.appendleft(new_pane)
         else:
-            if add_at_beginning:
-                self.active_panes.appendleft(new_pane)
-            else:
-                self.active_panes.append(new_pane)
+            self.active_panes.append(new_pane)
 
         self.refresh_ui()
 
@@ -253,14 +254,12 @@ class WindowList:
 
     def enlarge_pane(self):
         """Enlarge the currently focused window pane."""
-        pane = self.get_current_active_pane()
-        if pane:
+        if pane := self.get_current_active_pane():
             self.adjust_pane_size(pane, _WINDOW_SIZE_ADJUST)
 
     def shrink_pane(self):
         """Shrink the currently focused window pane."""
-        pane = self.get_current_active_pane()
-        if pane:
+        if pane := self.get_current_active_pane():
             self.adjust_pane_size(pane, -_WINDOW_SIZE_ADJUST)
 
     def adjust_pane_size(self, pane, diff: int = _WINDOW_SIZE_ADJUST):
@@ -270,9 +269,7 @@ class WindowList:
         next_pane = HSplit([],
                            height=Dimension(weight=50),
                            width=Dimension(weight=50))  # type: ignore
-        # Try to get the next visible pane to subtract a weight value from.
-        next_visible_pane = self._get_next_visible_pane_after(pane)
-        if next_visible_pane:
+        if next_visible_pane := self._get_next_visible_pane_after(pane):
             next_pane = next_visible_pane
 
         # If the last pane is selected, and there are at least 2 panes, make
@@ -354,8 +351,7 @@ class WindowList:
 
     def focus_next_visible_pane(self, pane):
         """Focus on the next visible window pane if possible."""
-        next_visible_pane = self._get_next_visible_pane_after(pane)
-        if next_visible_pane:
+        if next_visible_pane := self._get_next_visible_pane_after(pane):
             self.application.layout.focus(next_visible_pane)
             return
         self.application.focus_main_menu()

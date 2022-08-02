@@ -132,5 +132,5 @@ if __name__ == '__main__':
     try:
         main()
     except ZipError as err:
-        print('ERROR:', str(err), file=sys.stderr)
+        print('ERROR:', err, file=sys.stderr)
         sys.exit(1)

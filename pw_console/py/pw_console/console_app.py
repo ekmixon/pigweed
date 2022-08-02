@@ -77,11 +77,12 @@ class FloatingMessageBar(ConditionalContainer):
     def __init__(self, application):
         super().__init__(
             FormattedTextToolbar(
-                (lambda: application.message if application.message else []),
-                style='class:toolbar_inactive',
+                lambda: application.message or [], style='class:toolbar_inactive'
             ),
             filter=Condition(
-                lambda: application.message and application.message != ''))
+                lambda: application.message and application.message != ''
+            ),
+        )
 
 
 def _add_log_handler_to_pane(logger: Union[str, logging.Logger],
@@ -156,7 +157,7 @@ class ConsoleApp:
         # Event loop for executing user repl code.
         self.user_code_loop = asyncio.new_event_loop()
 
-        self.app_title = app_title if app_title else 'Pigweed Console'
+        self.app_title = app_title or 'Pigweed Console'
 
         # Top level UI state toggles.
         self.load_theme(self.prefs.ui_theme)
@@ -183,10 +184,11 @@ class ConsoleApp:
         self.keybind_help_window = HelpWindow(self, title='Keyboard Shortcuts')
 
         # Downstream project specific help text
-        self.app_help_text = help_text if help_text else None
-        self.app_help_window = HelpWindow(self,
-                                          additional_help_text=help_text,
-                                          title=(self.app_title + ' Help'))
+        self.app_help_text = help_text or None
+        self.app_help_window = HelpWindow(
+            self, additional_help_text=help_text, title=f'{self.app_title} Help'
+        )
+
         self.app_help_window.generate_help_text()
 
         # Used for tracking which pane was in focus before showing help window.
@@ -332,17 +334,18 @@ class ConsoleApp:
         self.focus_main_menu()
 
     def set_ui_theme(self, theme_name: str) -> Callable:
-        call_function = functools.partial(
+        return functools.partial(
             self.run_pane_menu_option,
-            functools.partial(self.load_theme, theme_name))
-        return call_function
+            functools.partial(self.load_theme, theme_name),
+        )
 
     def set_code_theme(self, theme_name: str) -> Callable:
-        call_function = functools.partial(
+        return functools.partial(
             self.run_pane_menu_option,
-            functools.partial(self.pw_ptpython_repl.use_code_colorscheme,
-                              theme_name))
-        return call_function
+            functools.partial(
+                self.pw_ptpython_repl.use_code_colorscheme, theme_name
+            ),
+        )
 
     def update_menu_items(self):
         self.root_container.menu_items = self._create_menu_items()
@@ -539,12 +542,14 @@ class ConsoleApp:
                         separate_log_panes=False) -> Optional[LogPane]:
         """Add the Log pane as a handler for this logger instance."""
 
-        existing_log_pane = None
-        # Find an existing LogPane with the same window_title.
-        for pane in self.window_manager.active_panes():
-            if isinstance(pane, LogPane) and pane.pane_title() == window_title:
-                existing_log_pane = pane
-                break
+        existing_log_pane = next(
+            (
+                pane
+                for pane in self.window_manager.active_panes()
+                if isinstance(pane, LogPane) and pane.pane_title() == window_title
+            ),
+            None,
+        )
 
         if not existing_log_pane or separate_log_panes:
             existing_log_pane = self._create_log_pane(title=window_title)
@@ -659,8 +664,7 @@ class ConsoleApp:
             bar_content = " " * (bar_size - position - 1) + "="
             if position > 0:
                 bar_content = "=".rjust(position) + " " * (bar_size - position)
-            new_log_line = 'Log message [{}] # {}'.format(
-                bar_content, message_count)
+            new_log_line = f'Log message [{bar_content}] # {message_count}'
             if message_count % 10 == 0:
                 new_log_line += (" Lorem ipsum dolor sit amet, consectetur "
                                  "adipiscing elit.") * 8

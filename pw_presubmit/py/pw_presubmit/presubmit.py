@@ -93,13 +93,15 @@ def _format_time(time_s: float) -> str:
 
 
 def _box(style, left, middle, right, box=tools.make_box('><>')) -> str:
-    return box.format(*style,
-                      section1=left + ('' if left.endswith(' ') else ' '),
-                      width1=_LEFT,
-                      section2=' ' + middle,
-                      width2=WIDTH - _LEFT - _RIGHT - 4,
-                      section3=right + ' ',
-                      width3=_RIGHT)
+    return box.format(
+        *style,
+        section1=left + ('' if left.endswith(' ') else ' '),
+        width1=_LEFT,
+        section2=f' {middle}',
+        width2=WIDTH - _LEFT - _RIGHT - 4,
+        section3=f'{right} ',
+        width3=_RIGHT,
+    )
 
 
 class PresubmitFailure(Exception):
@@ -144,7 +146,7 @@ class Program(collections.abc.Sequence):
         return self.name
 
     def title(self):
-        return f'{self.name if self.name else ""} presubmit checks'.strip()
+        return f'{self.name or ""} presubmit checks'.strip()
 
 
 class Programs(collections.abc.Mapping):
@@ -186,8 +188,7 @@ class PresubmitContext:
     package_root: Path
 
     def relative_paths(self, start: Optional[Path] = None) -> Tuple[Path, ...]:
-        return tuple(
-            tools.relative_paths(self.paths, start if start else self.root))
+        return tuple(tools.relative_paths(self.paths, start or self.root))
 
     def paths_by_repo(self) -> Dict[Path, List[Path]]:
         repos = collections.defaultdict(list)
@@ -632,11 +633,13 @@ def call(*args, **kwargs) -> None:
 
     if env.PW_PRESUBMIT_DISABLE_SUBPROCESS_CAPTURE:
         while True:
-            line = process.stdout.readline().decode(errors='backslashreplace')
-            if not line:
-                break
-            _LOG.info(line.rstrip())
+            if line := process.stdout.readline().decode(
+                errors='backslashreplace'
+            ):
+                _LOG.info(line.rstrip())
 
+            else:
+                break
     stdout, _ = process.communicate()
 
     logfunc = _LOG.warning if process.returncode else _LOG.debug

@@ -128,8 +128,10 @@ def install(level: Union[str, int] = logging.INFO,
         # colored text.
         timestamp_fmt = colors.black_on_white('%(asctime)s') + ' '
 
-    formatter = logging.Formatter(timestamp_fmt + '%(levelname)s %(message)s',
-                                  '%Y%m%d %H:%M:%S')
+    formatter = logging.Formatter(
+        f'{timestamp_fmt}%(levelname)s %(message)s', '%Y%m%d %H:%M:%S'
+    )
+
 
     # Set the log level on the root logger to NOTSET, so that all logs
     # propagated from child loggers are handled.

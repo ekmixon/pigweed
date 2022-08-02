@@ -44,10 +44,8 @@ class LineInfoBar(ConditionalContainer):
     @staticmethod
     def get_tokens(log_pane: 'LogPane'):
         """Return formatted text tokens for display."""
-        tokens = ' Line {} / {} '.format(
-            log_pane.log_view.get_current_line() + 1,
-            log_pane.log_view.get_total_count(),
-        )
+        tokens = f' Line {log_pane.log_view.get_current_line() + 1} / {log_pane.log_view.get_total_count()} '
+
         return [('', tokens)]
 
     def __init__(self, log_pane: 'LogPane'):
@@ -104,7 +102,7 @@ class BottomToolbarBar(ConditionalContainer):
     def get_left_text_tokens(self):
         """Return toolbar indicator and title."""
 
-        title = ' {} '.format(self.log_pane.pane_title())
+        title = f' {self.log_pane.pane_title()} '
         focus = functools.partial(pw_console.widgets.mouse_handlers.on_click,
                                   self.log_pane.focus_self)
         return pw_console.style.get_pane_indicator(self.log_pane, title, focus)
@@ -141,9 +139,7 @@ class BottomToolbarBar(ConditionalContainer):
         separator_text = [('', '  ', focus)
                           ]  # 2 spaces of separaton between keybinds.
 
-        fragments = []
-        fragments.extend(separator_text)
-
+        fragments = list(separator_text)
         fragments.extend(
             pw_console.widgets.checkbox.to_keybind_indicator(
                 '/', 'Search', start_search, base_style=button_style))
@@ -197,16 +193,27 @@ class BottomToolbarBar(ConditionalContainer):
                                   self.log_pane.focus_self)
         fragments = []
         if not has_focus(self.log_pane.__pt_container__())():
-            fragments.append((
-                'class:toolbar-button-inactive class:toolbar-button-decoration',
-                ' ', focus))
-            fragments.append(('class:toolbar-button-inactive class:keyhelp',
-                              'click to focus', focus))
-            fragments.append((
-                'class:toolbar-button-inactive class:toolbar-button-decoration',
-                ' ', focus))
-        fragments.append(
-            ('', '  {} '.format(self.log_pane.pane_subtitle()), focus))
+            fragments.extend(
+                (
+                    (
+                        'class:toolbar-button-inactive class:toolbar-button-decoration',
+                        ' ',
+                        focus,
+                    ),
+                    (
+                        'class:toolbar-button-inactive class:keyhelp',
+                        'click to focus',
+                        focus,
+                    ),
+                    (
+                        'class:toolbar-button-inactive class:toolbar-button-decoration',
+                        ' ',
+                        focus,
+                    ),
+                )
+            )
+
+        fragments.append(('', f'  {self.log_pane.pane_subtitle()} ', focus))
         return fragments
 
     def __init__(self, log_pane: 'LogPane'):

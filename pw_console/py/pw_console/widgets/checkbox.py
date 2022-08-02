@@ -15,16 +15,14 @@
 # the License.
 """Functions to create checkboxes for menus and toolbars."""
 
+
 import sys
 from typing import Callable, Iterable, Optional
 
 from prompt_toolkit.formatted_text import StyleAndTextTuples
 
 _KEY_SEPARATOR = ' '
-_CHECKED_BOX = '[✓]'
-
-if sys.platform in ['win32']:
-    _CHECKED_BOX = '[x]'
+_CHECKED_BOX = '[x]' if sys.platform in ['win32'] else '[✓]'
 
 
 def to_checkbox(checked: bool, mouse_handler=None, end=' '):
@@ -33,9 +31,7 @@ def to_checkbox(checked: bool, mouse_handler=None, end=' '):
     text = _CHECKED_BOX if checked else '[ ]'
     text += end
     style = checked_style if checked else default_style
-    if mouse_handler:
-        return (style, text, mouse_handler)
-    return (style, text)
+    return (style, text, mouse_handler) if mouse_handler else (style, text)
 
 
 def to_checkbox_text(checked: bool, end=' '):
@@ -51,9 +47,7 @@ def to_setting(
 ):
     """Apply a style to text if checked is True."""
     style = active_style if checked else inactive_style
-    if mouse_handler:
-        return (style, text, mouse_handler)
-    return (style, text)
+    return (style, text, mouse_handler) if mouse_handler else (style, text)
 
 
 def to_checkbox_with_keybind_indicator(
@@ -90,7 +84,7 @@ def to_keybind_indicator(
         base_style += ' '
 
     fragments: StyleAndTextTuples = []
-    fragments.append((base_style + 'class:toolbar-button-decoration', ' '))
+    fragments.append((f'{base_style}class:toolbar-button-decoration', ' '))
 
     def append_fragment_with_base_style(frag_list, fragment) -> None:
         if mouse_handler:
@@ -106,10 +100,9 @@ def to_keybind_indicator(
 
     # Function name
     if mouse_handler:
-        fragments.append(
-            (base_style + 'class:keyhelp', description, mouse_handler))
+        fragments.append((f'{base_style}class:keyhelp', description, mouse_handler))
     else:
-        fragments.append((base_style + 'class:keyhelp', description))
+        fragments.append((f'{base_style}class:keyhelp', description))
 
     if middle_fragments:
         for fragment in middle_fragments:
@@ -117,12 +110,11 @@ def to_keybind_indicator(
 
     # Separator and keybind
     if mouse_handler:
-        fragments.append(
-            (base_style + 'class:keyhelp', _KEY_SEPARATOR, mouse_handler))
-        fragments.append((base_style + 'class:keybind', key, mouse_handler))
+        fragments.append((f'{base_style}class:keyhelp', _KEY_SEPARATOR, mouse_handler))
+        fragments.append((f'{base_style}class:keybind', key, mouse_handler))
     else:
-        fragments.append((base_style + 'class:keyhelp', _KEY_SEPARATOR))
-        fragments.append((base_style + 'class:keybind', key))
+        fragments.append((f'{base_style}class:keyhelp', _KEY_SEPARATOR))
+        fragments.append((f'{base_style}class:keybind', key))
 
-    fragments.append((base_style + 'class:toolbar-button-decoration', ' '))
+    fragments.append((f'{base_style}class:toolbar-button-decoration', ' '))
     return fragments

@@ -62,8 +62,8 @@ class LogView:
     ):
         # Parent LogPane reference. Updated by calling `set_log_pane()`.
         self.log_pane = log_pane
-        self.log_store = log_store if log_store else LogStore(
-            prefs=application.prefs)
+        self.log_store = log_store or LogStore(prefs=application.prefs)
+
         self.log_store.register_viewer(self)
 
         # Search variables
@@ -110,9 +110,7 @@ class LogView:
 
     @property
     def line_index(self):
-        if self.filtering_on:
-            return self._filtered_line_index
-        return self._line_index
+        return self._filtered_line_index if self.filtering_on else self._line_index
 
     @line_index.setter
     def line_index(self, line_index):
@@ -187,7 +185,7 @@ class LogView:
                           invert,
                           field,
                           matcher: Optional[SearchMatcher] = None) -> bool:
-        search_matcher = matcher if matcher else self.search_matcher
+        search_matcher = matcher or self.search_matcher
         _LOG.debug(search_matcher)
 
         regex_text, regex_flags = preprocess_search_regex(
@@ -218,7 +216,7 @@ class LogView:
         search_matcher: Optional[str] = None,
     ) -> bool:
         """Start a new search for the given text."""
-        valid_matchers = list(s.name for s in SearchMatcher)
+        valid_matchers = [s.name for s in SearchMatcher]
         selected_matcher: Optional[SearchMatcher] = None
         if (search_matcher is not None
                 and search_matcher.upper() in valid_matchers):
@@ -275,9 +273,7 @@ class LogView:
         self.search_highlight = False
 
     def _get_log_lines(self):
-        logs = self.log_store.logs
-        if self.filtering_on:
-            logs = self.filtered_logs
+        logs = self.filtered_logs if self.filtering_on else self.log_store.logs
         return logs
 
     def _get_visible_log_lines(self):
@@ -366,9 +362,7 @@ class LogView:
 
     def wrap_lines_enabled(self):
         """Get the parent log pane wrap lines setting."""
-        if not self.log_pane:
-            return False
-        return self.log_pane.wrap_lines
+        return self.log_pane.wrap_lines if self.log_pane else False
 
     def toggle_follow(self):
         """Toggle auto line following."""
@@ -391,9 +385,7 @@ class LogView:
             else:
                 break
 
-        if filter_match_count == len(self.filters):
-            return True
-        return False
+        return filter_match_count == len(self.filters)
 
     def new_logs_arrived(self):
         # If follow is on, scroll to the last line.
@@ -491,23 +483,18 @@ class LogView:
         if self.follow:
             return
 
-        cursor_position = self.get_cursor_position()
-        if cursor_position:
+        if cursor_position := self.get_cursor_position():
             scroll_amount = cursor_position.y - mouse_position.y
             self.scroll(-1 * scroll_amount)
 
     def scroll_up_one_page(self):
         """Move the selected log index up by one window height."""
-        lines = 1
-        if self._window_height > 0:
-            lines = self._window_height
+        lines = self._window_height if self._window_height > 0 else 1
         self.scroll(-1 * lines)
 
     def scroll_down_one_page(self):
         """Move the selected log index down by one window height."""
-        lines = 1
-        if self._window_height > 0:
-            lines = self._window_height
+        lines = self._window_height if self._window_height > 0 else 1
         self.scroll(lines)
 
     def scroll_down(self, lines=1):

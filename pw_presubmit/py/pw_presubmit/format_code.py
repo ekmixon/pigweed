@@ -54,9 +54,7 @@ def _colorize_diff_line(line: str) -> str:
         return pw_presubmit.color_red(line)
     if line.startswith('+'):
         return pw_presubmit.color_green(line)
-    if line.startswith('@@ '):
-        return pw_presubmit.color_aqua(line)
-    return line
+    return pw_presubmit.color_aqua(line) if line.startswith('@@ ') else line
 
 
 def colorize_diff(lines: Iterable[str]) -> str:
@@ -92,8 +90,7 @@ def _check_files(files, formatter: Formatter) -> Dict[Path, str]:
     errors = {}
 
     for path in files:
-        difference = _diff_formatted(path, formatter)
-        if difference:
+        if difference := _diff_formatted(path, formatter):
             errors[path] = difference
 
     return errors
@@ -188,7 +185,7 @@ def check_py_format(files: Iterable[Path]) -> Dict[Path, str]:
     if process.stderr:
         _LOG.error('yapf encountered an error:\n%s',
                    process.stderr.decode(errors='replace').rstrip())
-        errors.update({file: '' for file in files if file not in errors})
+        errors |= {file: '' for file in files if file not in errors}
 
     return errors
 
@@ -363,7 +360,7 @@ class CodeFormatter:
 
         for code_format, files in self._formats.items():
             _LOG.debug('Checking %s', ', '.join(str(f) for f in files))
-            errors.update(code_format.check(files))
+            errors |= code_format.check(files)
 
         return collections.OrderedDict(sorted(errors.items()))
 
@@ -371,8 +368,7 @@ class CodeFormatter:
         """Fixes format errors for supported files in place."""
         for code_format, files in self._formats.items():
             code_format.fix(files)
-            _LOG.info('Formatted %s',
-                      plural(files, code_format.language + ' file'))
+            _LOG.info('Formatted %s', plural(files, f'{code_format.language} file'))
 
 
 def _file_summary(files: Iterable[Union[Path, str]], base: Path) -> List[str]:
@@ -416,7 +412,7 @@ def format_files(paths: Collection[Union[Path, str]],
 
     _LOG.info('Checking formatting for %s', plural(formatter.paths, 'file'))
 
-    for line in _file_summary(paths, repo if repo else Path.cwd()):
+    for line in _file_summary(paths, repo or Path.cwd()):
         print(line, file=sys.stderr)
 
     errors = formatter.check()
